@@ -35,8 +35,8 @@ jobs:
       - run: cat output/hello.txt
 
   install-and-build-react:
-    if: ${{ hashFiles('package.json') != '' }}
     needs: test-artifact
+    if: ${{ hashFiles('package.json') != '' }}
     runs-on: ubuntu-latest
     env:
       VITE_STUDENT_ID: ${{ secrets.VITE_STUDENT_ID }}
