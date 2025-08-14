@@ -1,0 +1,83 @@
+name: CI Lab (GitHub Actions)
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+
+jobs:
+  # Bài 1: Hello World
+  hello:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print greeting
+        run: echo "Hello world!"
+
+  # Bài 2 + 3: Multiple jobs (build -> test) và Artifacts
+  build-artifact:
+    needs: hello
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create artifact folder and file
+        run: |
+          mkdir -p output
+          echo "Hello from build job" > output/hello.txt
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: output/
+
+  test-artifact:
+    needs: build-artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: output
+      - name: Read file from artifact
+        run: cat output/hello.txt
+
+  # Bài 4 + 5 + 6: Build React + Cache + Env Vars
+  install-and-build-react:
+    needs: test-artifact
+    runs-on: ubuntu-latest
+    env:
+      # Bài 6: dùng biến môi trường/secret
+      VITE_STUDENT_ID: ${{ secrets.VITE_STUDENT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Bài 5: Cache node_modules theo package-lock.json
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-modules-
+
+      - name: Install dependencies
+        run: npm install
+
+      # Bài 6: In ra biến (GitHub sẽ tự mask secrets)
+      - name: Show masked env (for check)
+        run: echo "Student ID is: $VITE_STUDENT_ID"
+
+      # Bài 4: Build (giả sử dự án dùng Vite và output ở dist)
+      - name: Build
+        run: npm run build
+
+      - name: Upload dist as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: react-dist
+          path: dist/

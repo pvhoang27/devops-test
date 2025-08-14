@@ -1,0 +1,49 @@
+stages:
+  - hello
+  - build
+  - test
+  - install
+  - build-react
+
+hello:
+  stage: hello
+  script:
+    - echo "Hello world!"
+
+build_artifact:
+  stage: build
+  script:
+    - mkdir -p output
+    - echo "Hello from build job" > output/hello.txt
+  artifacts:
+    paths:
+      - output/
+
+test_artifact:
+  stage: test
+  script:
+    - cat output/hello.txt
+
+install:
+  stage: install
+  image: node:20
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - node_modules/
+  script:
+    - npm install
+
+build_react:
+  stage: build-react
+  image: node:20
+  variables:
+    VITE_STUDENT_ID: $VITE_STUDENT_ID
+  script:
+    - echo "Student ID is: $VITE_STUDENT_ID"
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
