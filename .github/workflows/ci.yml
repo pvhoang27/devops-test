@@ -1,33 +1,96 @@
-name: CI
+name: GitLab CI Lab (GitHub Actions Version)
 
 on:
   push:
-    branches:
-      - main
+    branches: ["**"]
   pull_request:
-    branches:
-      - main
 
 jobs:
-  install-and-build-react:
+  # B1: Hello World
+  hello:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Print greeting
+        run: echo "Hello World!"
 
-      - name: Setup Node.js
+  # B2: Multiple Jobs & Stages (build -> test)
+  build-job:
+    needs: hello
+    runs-on: ubuntu-latest
+    steps:
+      - name: Simulate building
+        run: echo "Building project..."
+
+  test-job:
+    needs: build-job
+    runs-on: ubuntu-latest
+    steps:
+      - name: Simulate testing
+        run: echo "Running tests..."
+
+  # B3: Using Artifacts
+  build-artifact:
+    needs: hello
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create artifact folder and file
+        run: |
+          mkdir -p output
+          echo "Hello from build stage" > output/hello.txt
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: output/
+
+  test-artifact:
+    needs: build-artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: output
+      - name: Read file from artifact
+        run: cat output/hello.txt
+
+  # B4, B5, B6: Build React + Cache + Env Vars
+  install-and-build-react:
+    needs: [test-job, test-artifact]
+    runs-on: ubuntu-latest
+    env:
+      VITE_STUDENT_ID: ${{ secrets.VITE_STUDENT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # B5: Cache node_modules
+      - name: Restore node_modules cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-modules-
+
       - name: Install dependencies
         run: npm install
 
-      - name: Build project
+      # B6: Print environment variable (will be masked if secret)
+      - name: Show masked env
+        run: echo "Student ID is: $VITE_STUDENT_ID"
+
+      # B4: Build React (Vite output = dist/)
+      - name: Build React
         run: npm run build
 
-      - name: Upload production-ready build files
+      - name: Upload build output
         uses: actions/upload-artifact@v4
         with:
           name: react-dist
-          path: dist
+          path: dist/
