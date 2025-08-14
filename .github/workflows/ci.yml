@@ -1,63 +1,33 @@
-name: CI Lab (GitHub Actions)
+name: CI
 
 on:
   push:
-    branches: ["**"]
+    branches:
+      - main
   pull_request:
+    branches:
+      - main
 
 jobs:
-  hello:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Hello world!"
-
-  build-artifact:
-    needs: hello
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: |
-          mkdir -p output
-          echo "Hello from build job" > output/hello.txt
-      - uses: actions/upload-artifact@v4
-        with:
-          name: build-output
-          path: output/
-
-  test-artifact:
-    needs: build-artifact
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-output
-          path: output
-      - run: cat output/hello.txt
-
   install-and-build-react:
-    needs: test-artifact
-    if: ${{ hashFiles('package.json') != '' }}
     runs-on: ubuntu-latest
-    env:
-      VITE_STUDENT_ID: ${{ secrets.VITE_STUDENT_ID }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-modules-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-modules-
-      - run: npm install
-      - run: echo "Student ID is: $VITE_STUDENT_ID"
-      - run: npm run build
-      - uses: actions/upload-artifact@v4
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Upload production-ready build files
+        uses: actions/upload-artifact@v4
         with:
           name: react-dist
-          path: |
-            dist/
-            build/
-          if-no-files-found: ignore
+          path: dist
