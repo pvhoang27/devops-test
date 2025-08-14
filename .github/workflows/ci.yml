@@ -2,7 +2,7 @@ name: CI Lab (GitHub Actions)
 
 on:
   push:
-    branches: [ "**" ]
+    branches: ["**"]
   pull_request:
 
 jobs:
@@ -35,9 +35,9 @@ jobs:
       - run: cat output/hello.txt
 
   install-and-build-react:
+    if: ${{ hashFiles('package.json') != '' }}
     needs: test-artifact
     runs-on: ubuntu-latest
-    if: hashFiles('package.json') != ''
     env:
       VITE_STUDENT_ID: ${{ secrets.VITE_STUDENT_ID }}
     steps:
