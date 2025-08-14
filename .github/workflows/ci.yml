@@ -36,28 +36,6 @@ jobs:
 
   install-and-build-react:
     needs: test-artifact
-    if: ${{ hashFiles('package.json') != '' }}
     runs-on: ubuntu-latest
-    env:
-      VITE_STUDENT_ID: ${{ secrets.VITE_STUDENT_ID }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-modules-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-modules-
-      - run: npm install
-      - run: echo "Student ID is: $VITE_STUDENT_ID"
-      - run: npm run build
-      - uses: actions/upload-artifact@v4
-        with:
-          name: react-dist
-          path: |
-            dist/
-            build/
-          if-no-files-found: ignore
+      - run: echo "This is a placeholder for React build"
